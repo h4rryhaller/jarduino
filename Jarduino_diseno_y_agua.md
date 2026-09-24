@@ -32,7 +32,7 @@ Es un resumen de lo que quedó cerrado. Sigue sin haber código.
 - **PCF8574 zonas, dirección 0x21** (A1-A2 a GND, A0 sin puentear; aún sin montar): los 4 estados de zona en P0-P3, P4-P7 libres.
 - **Alimentación de la tapa: todo a 5 V** (la LCD no muestra nada a 3,3 V y su mochila ya sube el bus a 5 V); 4 hilos por la bisagra: 5V, GND, SDA, SCL.
 - Los dos son chips PCF8574 normales (no hace falta la variante "A"): con 3 pines de dirección hay 8 direcciones posibles (0x20-0x27), de sobra para dos módulos en el mismo bus.
-- Relés: IN1→D7, IN2→D0, IN3→D5, IN4→D6 (confirmado sobre el prototipo real 2026-09-21; evita GPIO0/2/15 de arranque — el prototipo tenía IN1/IN2 en D3/D4, se corrigen por el mismo motivo que el HC-SR04 de la caja: un relé parpadeando en cada reset podría abrir una válvula sin querer).
+- Relés: IN1→D7, IN2→D6, IN3→D5, IN4→D0 (medido con polímetro 2026-09-24, zona n = relé n; evita GPIO0/2/15 de arranque — el prototipo tenía IN1/IN2 en D3/D4, se corrigen por el mismo motivo que el HC-SR04 de la caja: un relé parpadeando en cada reset podría abrir una válvula sin querer).
 - Quedan libres D3, D4, D8, RX y TX, y también A0.
 
 **Menú con 5 pulsadores en cruz (2026-09-21, sustituye a los 3 botones; se valoró y descartó un joystick)**

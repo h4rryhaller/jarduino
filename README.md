@@ -30,10 +30,10 @@ Descartado: LCD Keypad Shield (pines, forma física, botones analógicos a 5 V f
 |---|---|---|
 | I2C SDA | D2 / GPIO4 | Compartido: LCD, DS3231 (`0x68`), PCF8574 botones de menú (`0x20`), PCF8574 zonas (`0x21`), LCD (`0x27`) |
 | I2C SCL | D1 / GPIO5 | |
-| Relé IN3 (zona 3) | D5 / GPIO14 | |
-| Relé IN4 (zona 4) | D6 / GPIO12 | |
 | Relé IN1 (zona 1) | D7 / GPIO13 | Antes en D3 — pin de arranque, corregido 2026-09-21 |
-| Relé IN2 (zona 2) | D0 / GPIO16 | Antes en D4 — pin de arranque, corregido 2026-09-21 |
+| Relé IN2 (zona 2) | D6 / GPIO12 | Comprobado con polímetro 2026-09-24 |
+| Relé IN3 (zona 3) | D5 / GPIO14 | |
+| Relé IN4 (zona 4) | D0 / GPIO16 | Comprobado con polímetro 2026-09-24 |
 
 Se evitan deliberadamente GPIO0/2/15 (boot-strapping).
 
