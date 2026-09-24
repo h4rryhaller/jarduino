@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "zonas": [
+    {
+      "id": 1,
+      "nombre": "Huerto",
+      "activo": true,
+      "necesita_compania": [],
+      "horario": { "inicio": "07:00", "fin": "07:20", "dias": ["L", "M", "X", "J", "V", "S", "D"] }
+    },
+    {
+      "id": 2,
+      "nombre": "Huerta",
+      "activo": true,
+      "necesita_compania": [],
+      "horario": { "inicio": "07:20", "fin": "07:40", "dias": ["L", "M", "X", "J", "V", "S", "D"] }
+    },
+    {
+      "id": 3,
+      "nombre": "Jardín",
+      "activo": true,
+      "necesita_compania": [1, 2],
+      "horario": { "inicio": "07:00", "fin": "07:40", "dias": ["L", "X", "V"] }
+    },
+    {
+      "id": 4,
+      "nombre": "Sin asignar",
+      "activo": false,
+      "necesita_compania": [],
+      "horario": { "inicio": "00:00", "fin": "00:00", "dias": [] }
+    }
+  ],
+  "sistema": {
+    "notificaciones": { "activo": false, "servicio": "ninguno", "destino": "" }
+  }
+}
