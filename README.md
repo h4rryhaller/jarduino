@@ -62,7 +62,7 @@ El caudal es fuerte, así que normalmente se riegan varias zonas a la vez. Regla
 - `POST /api/riego/detener-todo`
 - `GET /api/sistema`
 
-Cada zona registra `activada_por`: `automatico` | `manual_switch` | `manual_api`. Errores como `{"error", "detalle"}`. Persistencia en LittleFS (`config.json`). Sin autenticación — solo accesible en la LAN. Solapes entre zonas permitidos (salvo la regla del jardín). Una web app mínima, servida desde la flash del ESP en `jarduino.local` (mDNS), consumirá esta misma API — pensada para que la use también quien no sea técnico.
+Cada zona registra `activada_por`: `automatico` | `manual_switch` | `manual_api` | `manual_lcd` (este último añadido con el firmware, 2026-09-27: riego lanzado desde la tapa). Errores como `{"error", "detalle"}`. Persistencia en LittleFS (`config.json`). Sin autenticación — solo accesible en la LAN. Solapes entre zonas permitidos (salvo la regla del jardín). Una web app mínima, servida desde la flash del ESP en `jarduino.local` (mDNS), consumirá esta misma API — pensada para que la use también quien no sea técnico.
 
 ## OTA
 
@@ -77,7 +77,12 @@ Formato definido (2026-09-21), ver [`config.json.example`](./config.json.example
 1. ~~Medir presiones con el manómetro~~ — pospuesto, la fontanería se deja para más adelante.
 2. ~~Definir el formato de `config.json`~~ — hecho (2026-09-21).
 3. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD `0x27` + botones `0x20`, sketches `i2c_scanner/` y `prueba_tapa/`). La tapa va entera a **5 V** (la LCD lo necesita): 4 hilos por la bisagra (5V, GND, SDA, SCL). Botones soldados y confirmados 2026-09-24. DS3231 y relés verificados 2026-09-24. Pendiente: optoacopladores + PCF8574 de zonas (`0x26`).
-4. Firmware: tareas no bloqueantes, riego independiente de la red.
+4. Firmware (`jarduino/`), por fases, con tareas no bloqueantes y el riego independiente de la red:
+   1. **Núcleo sin red** — hecho 2026-09-27, compila sin avisos y las reglas de compañía se han probado en una simulación en el PC; falta probarlo en el banco. `config.json` en LittleFS, RTC, horarios (si arranca a mitad de una ventana, riega lo que queda), relés escalonados con la regla del jardín, optos (interruptor manual, fallo de válvula), pantalla de inicio de la tapa y consola serie (`T`, `R`, `P`, `E`, `C`; ver `consola.h`).
+   2. WiFi + NTP + API HTTP.
+   3. Menú de la tapa.
+   4. OTA y web app.
+   5. Notificaciones.
 
 ## Agua (resumen)
 
