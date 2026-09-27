@@ -27,6 +27,7 @@ struct EstadoZona {
 };
 
 void riegoIniciar();  // lo primero de setup(): deja los relés apagados
+void riegoIniciarOptos();  // tras Wire.begin()
 void riegoTick();
 
 // n = 1..NUM_ZONAS. Si la zona ya estaba pedida, se sustituye la duración.

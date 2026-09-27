@@ -19,6 +19,7 @@ void setup() {
   Serial.println("Jarduino arrancando");
 
   Wire.begin(PIN_SDA, PIN_SCL);
+  riegoIniciarOptos();
   cargarConfiguracion(config);
   tapaIniciar();
   relojTick();

@@ -9,7 +9,7 @@ static bool hayManiobraPrevia = false;
 static uint32_t releCambioMs[NUM_ZONAS];
 
 // Lectura de los optos con antirrebote
-static bool optosOk = false;
+static bool optosOk = false, optosLeidos = false;
 static uint8_t optoCrudoAnterior = 0xFF;
 static uint32_t optoCambioMs = 0;
 static uint32_t ultimaLecturaOptoMs = 0;
@@ -52,6 +52,12 @@ void riegoIniciar() {
     zonas[i] = {};
     releCambioMs[i] = 0;
   }
+}
+
+void riegoIniciarOptos() {
+  Wire.beginTransmission(ADDR_ZONAS);
+  Wire.write(0xFF);  // entradas con pull-up débil
+  Wire.endTransmission();
 }
 
 bool riegoIniciarZona(uint8_t n, uint32_t segundos, Origen origen) {
@@ -99,13 +105,12 @@ static void leerOptos() {
   if (millis() - ultimaLecturaOptoMs < 20) return;
   ultimaLecturaOptoMs = millis();
 
-  if (Wire.requestFrom((uint8_t)ADDR_ZONAS, (uint8_t)1) != 1) {
-    if (optosOk) Serial.println("La placa de zonas (0x26) no responde");
-    optosOk = false;
-    return;
-  }
-  if (!optosOk) Serial.println("Placa de zonas (0x26) OK");
-  optosOk = true;
+  bool responde = Wire.requestFrom((uint8_t)ADDR_ZONAS, (uint8_t)1) == 1;
+  if (responde != optosOk || !optosLeidos)
+    Serial.println(responde ? "Placa de zonas (0x26) OK" : "La placa de zonas (0x26) no responde");
+  optosOk = responde;
+  optosLeidos = true;
+  if (!responde) return;
 
   uint8_t crudo = Wire.read();
   if (crudo != optoCrudoAnterior) {
