@@ -1,4 +1,6 @@
-// Prueba de RTC (DS3231) y relés de Jarduino, usando la tapa (LCD + botones).
+// Prueba de RTC (DS3231), relés y optoacopladores de Jarduino, usando la tapa
+// (LCD + botones). Los cambios en la placa de zonas (0x26) salen por el monitor
+// serie: "P0 -> 0 (con tension)" al activar una zona.
 // SDA -> D2 (GPIO4), SCL -> D1 (GPIO5). Monitor serie a 115200.
 //
 // LCD línea 1: hora del RTC.  Línea 2: las 4 zonas, p. ej. ">1X  2.  3.  4. "
@@ -16,6 +18,7 @@
 const uint8_t ADDR_LCD     = 0x27;
 const uint8_t ADDR_BOTONES = 0x20;
 const uint8_t ADDR_RTC     = 0x68;
+const uint8_t ADDR_ZONAS   = 0x26;  // salidas de los optos, activas a nivel bajo
 
 // Relés: IN1..IN4. El módulo típico de 4 relés se activa con LOW;
 // si al arrancar se encienden todos, cambiar RELE_ON a HIGH.
@@ -37,6 +40,7 @@ uint8_t seleccion = 0;
 
 uint8_t lecturaAnterior = 0xFF, estadoEstable = 0xFF;
 unsigned long ultimoCambio = 0, ultimoRefresco = 0;
+uint8_t zonasAnterior = 0xFF;
 
 // ---------- DS3231 ----------
 
@@ -176,6 +180,10 @@ void setup() {
   Wire.write(0xFF);  // entradas con pull-up débil
   Wire.endTransmission();
 
+  Wire.beginTransmission(ADDR_ZONAS);
+  Wire.write(0xFF);
+  if (Wire.endTransmission() != 0) Serial.println("La placa de zonas (0x26) no responde");
+
   Fecha f;
   if (!rtcLeer(f)) {
     Serial.println("El RTC (0x68) no responde");
@@ -211,6 +219,18 @@ void loop() {
       rele(i, false);
       pintar();
     }
+  }
+
+  if (Wire.requestFrom(ADDR_ZONAS, (uint8_t)1) == 1) {
+    uint8_t zonas = Wire.read();
+    uint8_t cambios = zonas ^ zonasAnterior;
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      if (cambios & (1 << bit)) {
+        bool bajo = !(zonas & (1 << bit));
+        Serial.printf("P%u -> %u (%s)\n", bit, !bajo, bajo ? "con tension" : "sin tension");
+      }
+    }
+    zonasAnterior = zonas;
   }
 
   if (millis() - ultimoRefresco >= 500) {

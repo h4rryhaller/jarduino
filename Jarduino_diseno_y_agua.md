@@ -27,9 +27,9 @@ Es un resumen de lo que quedó cerrado. Sigue sin haber código.
 
 **Lógica y pantalla**
 - ESP8266 NodeMCU.
-- Bus I2C compartido en D1 (SCL) y D2 (SDA) con la LCD 16x2 (misma placa que la caja, con su propio PCF8574T soldado — **0x27 de fábrica, confirmado 2026-09-23**), el DS3231 (0x68, confirmado en el prototipo real) y **dos PCF8574** más (2026-09-21, sustituyen al único expansor de antes): en total 3 chips PCF8574 en el mismo bus, direcciones 0x20/0x21/0x27, sin colisión esperada.
+- Bus I2C compartido en D1 (SCL) y D2 (SDA) con la LCD 16x2 (misma placa que la caja, con su propio PCF8574T soldado — **0x27 de fábrica, confirmado 2026-09-23**), el DS3231 (0x68, confirmado en el prototipo real) y **dos PCF8574** más (2026-09-21, sustituyen al único expansor de antes): en total 3 chips PCF8574 en el mismo bus, direcciones 0x20 (botones) / 0x26 (zonas) / 0x27 (LCD).
 - **PCF8574 botones, dirección 0x20** (A0-A2 a GND; se buscaba 0x21 pero el estaño unió también A0 y se dejó así, 2026-09-23): otra mochila de LCD con 5 pulsadores sueltos en cruz, común a GND (pin 1 del conector de 16). Orden de bits no estándar, confirmado con los botones soldados (2026-09-24): centro = P5, derecha = P4, arriba = P2, izquierda = P1, abajo = P0. P3 evitado (transistor de retroiluminación).
-- **PCF8574 zonas, dirección 0x21** (A1-A2 a GND, A0 sin puentear; aún sin montar): los 4 estados de zona en P0-P3, P4-P7 libres.
+- **PCF8574 zonas, dirección 0x26** (solo A0 a GND, otra mochila de LCD; decidido 2026-09-24, un solo puente por ser menos soldadura): los 4 estados de zona, salidas del módulo Hailege de optoacopladores. Evitar P3 (transistor de retroiluminación: siempre a 0). Salidas del opto activas a nivel bajo, sin pull-up propio (usar el del PCF8574; nunca 5 V directos a V1). Zona 1 = pin 4 = P0 (2026-09-26); zonas 2-4 por mapear.
 - **Alimentación de la tapa: todo a 5 V** (la LCD no muestra nada a 3,3 V y su mochila ya sube el bus a 5 V); 4 hilos por la bisagra: 5V, GND, SDA, SCL.
 - Los dos son chips PCF8574 normales (no hace falta la variante "A"): con 3 pines de dirección hay 8 direcciones posibles (0x20-0x27), de sobra para dos módulos en el mismo bus.
 - Relés: IN1→D7, IN2→D6, IN3→D5, IN4→D0 (medido con polímetro 2026-09-24, zona n = relé n; evita GPIO0/2/15 de arranque — el prototipo tenía IN1/IN2 en D3/D4, se corrigen por el mismo motivo que el HC-SR04 de la caja: un relé parpadeando en cada reset podría abrir una válvula sin querer).
@@ -202,7 +202,7 @@ Todas resueltas el 2026-09-21 (la parte física — medir presión, instalar el 
 1. ~~Medir presiones con el manómetro.~~ **Pospuesto** — el usuario deja la fontanería para más adelante (2026-09-21).
 2. ~~Reescribir el README con el diseño real, incluida la regla de zonas.~~ **Hecho** (2026-09-21).
 3. ~~Definir el formato de `config.json`~~ **Hecho** (2026-09-21) — ver sección 11.
-4. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD 0x27, botones 0x20). Falta DS3231 y PCF8574 de zonas.
+4. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD 0x27, botones 0x20). DS3231 y relés verificados 2026-09-24; falta PCF8574 de zonas (0x26) con los optos.
 5. Después, el firmware, con estructura de tareas no bloqueantes y el riego independiente de la red.
 
 

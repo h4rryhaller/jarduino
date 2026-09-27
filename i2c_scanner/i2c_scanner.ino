@@ -20,7 +20,7 @@ const Boton BOTONES[] = {
 const char *identificar(uint8_t addr) {
   switch (addr) {
     case 0x20: return "PCF8574 botones";
-    case 0x21: return "PCF8574 zonas";
+    case 0x26: return "PCF8574 zonas";
     case 0x27: return "PCF8574 LCD";
     case 0x57: return "EEPROM AT24C32 (modulo del RTC)";
     case 0x68: return "RTC DS3231";

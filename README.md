@@ -19,7 +19,7 @@ Esquema de cableado (alimentación, relés/válvulas por zona, bus I²C y menú)
 - **Detección de estado por zona** con un optoacoplador PC817 sobre la línea hacia cada válvula (válido tanto si abrió el relé como el interruptor manual).
 - **RTC DS3231** (módulo ZS-042) — necesario porque el WiFi llega justo a las válvulas. Si se usa una CR2032 no recargable, quitar el diodo/resistencia del circuito de carga del módulo (pensado para pilas recargables).
 - **LCD 16×2 con backpack I2C** en `0x27` (de fábrica, sin puentes). Usa la `LiquidCrystal_I2C` de LCDBigNumbers (ArminJo): incluir `<LiquidCrystal_I2C.hpp>`, no el `.h`, o falla al enlazar.
-- **Dos PCF8574** (expansores I2C, mismo chip, direcciones distintas por A0-A2): uno en `0x20` (A0-A2 a GND, otra mochila de LCD) con **5 pulsadores sueltos montados en cruz** (arriba, abajo, izquierda, derecha, centro), común a GND; otro en `0x21` (A1-A2 a GND, A0 sin puentear; aún sin montar) con las 4 entradas de estado de zona en P0-P3. La placa de botones no sigue el orden habitual de las mochilas; bits medidos en protoboard (2026-09-23): centro = P5, derecha = P4, arriba = P2, izquierda = P1, abajo = P0 (confirmado con los botones soldados, 2026-09-24). Se valoraron y descartaron un joystick pequeño tipo Ardutype (esta caja va en la pared, no en la mano) y uno analógico KY-023 (necesitaría un ADS1115, más complejo y con deriva de centrado).
+- **Dos PCF8574** (expansores I2C, mismo chip, direcciones distintas por A0-A2): uno en `0x20` (A0-A2 a GND, otra mochila de LCD) con **5 pulsadores sueltos montados en cruz** (arriba, abajo, izquierda, derecha, centro), común a GND; otro en `0x26` (solo A0 a GND, otra mochila de LCD) con las 4 entradas de estado de zona (salidas del módulo de optoacopladores); evitar P3 (transistor de retroiluminación de la mochila). Módulo opto Hailege probado 2026-09-26: salida en colector abierto sin pull-up propio, **activa a nivel bajo** (válvula con tensión → 0; 0,4 V con el pull-up del PCF8574, sin resistencia externa). Zona 1 = pin 4 del conector = P0; P3 siempre a 0, se ignora; zonas 2-4 por mapear. La placa de botones no sigue el orden habitual de las mochilas; bits medidos en protoboard (2026-09-23): centro = P5, derecha = P4, arriba = P2, izquierda = P1, abajo = P0 (confirmado con los botones soldados, 2026-09-24). Se valoraron y descartaron un joystick pequeño tipo Ardutype (esta caja va en la pared, no en la mano) y uno analógico KY-023 (necesitaría un ADS1115, más complejo y con deriva de centrado).
 - Cada electroválvula lleva su **diodo 1N4007 en antiparalelo** (protección del pico de la bobina al cortar). Las electroválvulas instaladas no tienen marca visible (intemperie), funcionan entre 12 y 24 V — dentro del rango de los 19V del cargador Dell — y son **normalmente cerradas (NC)**.
 
 Descartado: LCD Keypad Shield (pines, forma física, botones analógicos a 5 V frente al ESP a 3,3 V) y PIR (no aplica a este proyecto).
@@ -28,7 +28,7 @@ Descartado: LCD Keypad Shield (pines, forma física, botones analógicos a 5 V f
 
 | Señal | Pin ESP8266 | Notas |
 |---|---|---|
-| I2C SDA | D2 / GPIO4 | Compartido: LCD, DS3231 (`0x68`), PCF8574 botones de menú (`0x20`), PCF8574 zonas (`0x21`), LCD (`0x27`) |
+| I2C SDA | D2 / GPIO4 | Compartido: LCD, DS3231 (`0x68`), PCF8574 botones de menú (`0x20`), PCF8574 zonas (`0x26`), LCD (`0x27`) |
 | I2C SCL | D1 / GPIO5 | |
 | Relé IN1 (zona 1) | D7 / GPIO13 | Antes en D3 — pin de arranque, corregido 2026-09-21 |
 | Relé IN2 (zona 2) | D6 / GPIO12 | Comprobado con polímetro 2026-09-24 |
@@ -76,7 +76,7 @@ Formato definido (2026-09-21), ver [`config.json.example`](./config.json.example
 
 1. ~~Medir presiones con el manómetro~~ — pospuesto, la fontanería se deja para más adelante.
 2. ~~Definir el formato de `config.json`~~ — hecho (2026-09-21).
-3. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD `0x27` + botones `0x20`, sketches `i2c_scanner/` y `prueba_tapa/`). La tapa va entera a **5 V** (la LCD lo necesita): 4 hilos por la bisagra (5V, GND, SDA, SCL). Botones soldados y confirmados 2026-09-24. Pendiente: añadir DS3231 y PCF8574 de zonas al bus.
+3. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD `0x27` + botones `0x20`, sketches `i2c_scanner/` y `prueba_tapa/`). La tapa va entera a **5 V** (la LCD lo necesita): 4 hilos por la bisagra (5V, GND, SDA, SCL). Botones soldados y confirmados 2026-09-24. DS3231 y relés verificados 2026-09-24. Pendiente: optoacopladores + PCF8574 de zonas (`0x26`).
 4. Firmware: tareas no bloqueantes, riego independiente de la red.
 
 ## Agua (resumen)
