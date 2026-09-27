@@ -1,6 +1,6 @@
 // Prueba de RTC (DS3231), relés y optoacopladores de Jarduino, usando la tapa
 // (LCD + botones). Los cambios en la placa de zonas (0x26) salen por el monitor
-// serie: "P0 -> 0 (con tension)" al activar una zona.
+// serie: "Opto zona 1 (P0): con tension" al activar una zona.
 // SDA -> D2 (GPIO4), SCL -> D1 (GPIO5). Monitor serie a 115200.
 //
 // LCD línea 1: hora del RTC.  Línea 2: las 4 zonas, p. ej. ">1X  2.  3.  4. "
@@ -19,6 +19,8 @@ const uint8_t ADDR_LCD     = 0x27;
 const uint8_t ADDR_BOTONES = 0x20;
 const uint8_t ADDR_RTC     = 0x68;
 const uint8_t ADDR_ZONAS   = 0x26;  // salidas de los optos, activas a nivel bajo
+// Bit de la placa de zonas para cada zona (P3 es la retroiluminación: siempre 0)
+const uint8_t BIT_ZONA[4] = {4, 2, 1, 0};  // medido 2026-09-27
 
 // Relés: IN1..IN4. El módulo típico de 4 relés se activa con LOW;
 // si al arrancar se encienden todos, cambiar RELE_ON a HIGH.
@@ -224,10 +226,11 @@ void loop() {
   if (Wire.requestFrom(ADDR_ZONAS, (uint8_t)1) == 1) {
     uint8_t zonas = Wire.read();
     uint8_t cambios = zonas ^ zonasAnterior;
-    for (uint8_t bit = 0; bit < 8; bit++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      uint8_t bit = BIT_ZONA[i];
       if (cambios & (1 << bit)) {
-        bool bajo = !(zonas & (1 << bit));
-        Serial.printf("P%u -> %u (%s)\n", bit, !bajo, bajo ? "con tension" : "sin tension");
+        bool conTension = !(zonas & (1 << bit));
+        Serial.printf("Opto zona %u (P%u): %s\n", i + 1, bit, conTension ? "con tension" : "sin tension");
       }
     }
     zonasAnterior = zonas;
