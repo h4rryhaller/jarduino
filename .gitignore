@@ -1,0 +1,8 @@
+# Configuración real con credenciales (usar config.json.example como plantilla)
+config.json
+
+# Artefactos de compilación de Arduino
+build/
+*.bin
+*.elf
+*.hex
