@@ -76,13 +76,27 @@ Formato definido (2026-09-21), ver [`config.json.example`](./config.json.example
 
 1. ~~Medir presiones con el manómetro~~ — pospuesto, la fontanería se deja para más adelante.
 2. ~~Definir el formato de `config.json`~~ — hecho (2026-09-21).
-3. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD `0x27` + botones `0x20`, sketches `i2c_scanner/` y `prueba_tapa/`). La tapa va entera a **5 V** (la LCD lo necesita): 4 hilos por la bisagra (5V, GND, SDA, SCL). Botones soldados y confirmados 2026-09-24. DS3231 y relés verificados 2026-09-24. Pendiente: optoacopladores + PCF8574 de zonas (`0x26`).
+3. ~~Montar en protoboard el bus I2C de la tapa y verificar direcciones~~ hecho 2026-09-23 (LCD `0x27` + botones `0x20`, sketches `i2c_scanner/` y `prueba_tapa/`). La tapa va entera a **5 V** (la LCD lo necesita): 4 hilos por la bisagra (5V, GND, SDA, SCL). Botones soldados y confirmados 2026-09-24. DS3231 y relés verificados 2026-09-24. Optoacopladores + PCF8574 de zonas (`0x26`) verificados 2026-09-27. En el montaje final (2026-09-30) la mochila de zonas dejó de responder en `0x26`. Causa (encontrada 2026-10-01): **soldadura defectuosa en el VCC de la mochila** (la continuidad salía según por qué lado se midiera). Sola en la protoboard funcionaba, seguramente alimentada a través de los pull-ups de SDA/SCL, pero en el circuito completo fallaba. Arreglada y confirmada con el escáner I²C. Además, la GND de salida del módulo de optos tiene que ir al pin 1 (VSS) del conector de 16 de la mochila; no basta la GND del conector del bus. Pendiente: volver a montar el módulo de optos (se desmontó buscando el fallo).
 4. Firmware (`jarduino/`), por fases, con tareas no bloqueantes y el riego independiente de la red:
    1. **Núcleo sin red** — hecho 2026-09-27, compila sin avisos y las reglas de compañía se han probado en una simulación en el PC; falta probarlo en el banco. `config.json` en LittleFS, RTC, horarios (si arranca a mitad de una ventana, riega lo que queda), relés escalonados con la regla del jardín, optos (interruptor manual, fallo de válvula), pantalla de inicio de la tapa y consola serie (`T`, `R`, `P`, `E`, `C`; ver `consola.h`).
    2. WiFi + NTP + API HTTP.
    3. Menú de la tapa.
    4. OTA y web app.
    5. Notificaciones.
+
+## Mejoras futuras: detección de fugas
+
+Orden recomendado (charla del 2026-09-30):
+
+1. **Caudalímetro** en la tubería general, después de los filtros y antes de la derivación a la abonadora. Antes de comprarlo, medir el caudal con el contador de la compañía (1, 2 y 3 zonas a la vez) para elegir el tamaño; seguramente de 1" (tipo YF-G1 / FS400A), porque el YF-S201 de 1/2" podría estrangular la tubería de 32 mm. Da pulsos, no es I²C: iría por interrupción en **RX/GPIO3** (D3, D4 y D8 son pines de arranque), que queda libre al pasar la consola a la red en la fase 2, con un divisor 10k/20k para bajar los pulsos a 3,3 V. Permite detectar:
+   - **Fuga con todo cerrado**: caudal sostenido sin ninguna zona regando. Entre la llave general y las válvulas solo está la abonadora, así que es fiable; al cargarla o vaciarla puede verse una fuga pequeña, por eso esa alarma sería solo un aviso.
+   - **Fuga durante el riego**: una zona gasta un 20-30 % más de lo que suele (tubo suelto, gotero roto). Si gasta menos, hay goteros atascados.
+   - **Reventón**: el caudal se dispara → cerrar todo y avisar.
+   - Límite: por debajo de ~1 L/min el rotor no gira, así que no ve goteos pequeños.
+2. **Electroválvula general** al principio de la línea. Hoy "cerrar todo" solo cierra las 4 zonas: un reventón antes de las válvulas no se puede cortar. Se activaría desde la placa de zonas (`0x26`, P5-P7 libres) con un relé más. Además deja la línea sin presión cuando no se riega y permite la prueba de presión.
+3. **Sensor de presión**: transductor de 0-1,2 MPa (0,5-4,5 V) con un ADS1115 (`0x48`) a 5 V en el bus I²C, después de los filtros y del reductor. Con la válvula general cerrada, si la presión baja hay una fuga, por pequeña que sea. También sirve para comprobar que una válvula abre, detectar cortes de agua y vigilar el reductor.
+
+Si se añaden más placas al bus I²C, medir las pull-ups: con 4 placas el equivalente puede rondar ya 1,2 kΩ; quitar las que sobren.
 
 ## Agua (resumen)
 
