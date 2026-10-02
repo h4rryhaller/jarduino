@@ -8,6 +8,7 @@
 //   P 3  /  P              detiene la zona 3 / todas
 //   E                      estado de las zonas
 //   C                      config.json actual
+//   W                      estado de la WiFi (conectado, SSID, IP, RSSI, NTP)
 void consolaTick();
 
 #endif

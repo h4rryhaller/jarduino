@@ -3,6 +3,7 @@
 #include "configuracion.h"
 #include "reloj.h"
 #include "riego.h"
+#include "red.h"
 #include "consola.h"
 
 static void imprimirEstado() {
@@ -40,8 +41,14 @@ static void ejecutar(const char *orden) {
     configuracionAJson(config, doc);
     serializeJsonPretty(doc, Serial);
     Serial.println();
+  } else if (strcmp(orden, "W") == 0) {
+    if (redConectada())
+      Serial.printf("WiFi: conectado a \"%s\"  IP %s  RSSI %d dBm  NTP=%s\n", redSsid().c_str(),
+                    redIp().c_str(), redRssi(), ntpSincronizado() ? "si" : "no");
+    else
+      Serial.printf("WiFi: SIN conexion (SSID guardado: \"%s\")\n", redSsid().c_str());
   } else {
-    Serial.println("Ordenes: T2026-09-24 18:30:00 | R <zona> <min> | P [zona] | E | C");
+    Serial.println("Ordenes: T2026-09-24 18:30:00 | R <zona> <min> | P [zona] | E | C | W");
   }
 }
 

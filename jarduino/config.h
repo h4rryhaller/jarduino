@@ -47,4 +47,14 @@ static const uint8_t BIT_ZONA[NUM_ZONAS] = {0, 1, 2, 3};
 // ---- Persistencia ----
 #define CONFIG_FILE_PATH "/config.json"
 
+// ---- Red (fase 2) ----
+#define HTTP_PORT       80
+#define HOSTNAME        "jarduino"        // DHCP + mDNS -> jarduino.local
+#define AP_SETUP        "Jarduino-setup"  // AP del portal cautivo de WiFiManager
+#define PORTAL_TIMEOUT_S 300              // si nadie configura el portal, sigue offline
+#define TZ_HORARIO      "CET-1CEST,M3.5.0,M10.5.0/3"  // España peninsular, con cambio de hora
+#define NTP_SERVER1     "pool.ntp.org"
+#define NTP_SERVER2     "time.nist.gov"
+#define RTC_RESYNC_MS   86400000UL        // re-sincroniza el RTC con NTP 1 vez/día
+
 #endif
