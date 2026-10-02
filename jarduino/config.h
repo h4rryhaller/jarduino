@@ -19,9 +19,9 @@ static const uint8_t PIN_RELE[NUM_ZONAS] = {13, 12, 14, 16};
 #define RELE_ON  LOW
 #define RELE_OFF HIGH
 
-// Bit de la placa de zonas para cada zona (medido 2026-09-27). P3 es la
-// retroiluminación de la mochila: siempre a 0, se ignora.
-static const uint8_t BIT_ZONA[NUM_ZONAS] = {4, 2, 1, 0};
+// Bit de la placa de zonas para cada zona. Módulo PCF8574 GERUI (2026-10-02)
+// con P0-P7 directos: zona n -> P(n-1). Zona 1=P0, 2=P1, 3=P2, 4=P3.
+static const uint8_t BIT_ZONA[NUM_ZONAS] = {0, 1, 2, 3};
 
 // Bits de la placa de botones (medidos con los botones soldados, 2026-09-24)
 #define BIT_ARRIBA 2
