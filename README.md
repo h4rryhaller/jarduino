@@ -98,7 +98,7 @@ Formato definido (2026-09-21), ver [`config.json.example`](./config.json.example
 4. Firmware (`jarduino/`), por fases, con tareas no bloqueantes y el riego independiente de la red:
    1. **Núcleo sin red** — hecho 2026-09-27, compila sin avisos y las reglas de compañía se han probado en una simulación en el PC; falta probarlo en el banco. `config.json` en LittleFS, RTC, horarios (si arranca a mitad de una ventana, riega lo que queda), relés escalonados con la regla del jardín, optos (interruptor manual, fallo de válvula), pantalla de inicio de la tapa y consola serie (`T`, `R`, `P`, `E`, `C`; ver `consola.h`).
    2. **WiFi + NTP + API HTTP** — hecho y probado sobre hardware real por WiFi (2026-10-02). `red.*` (WiFiManager con portal cautivo "Jarduino-setup", mDNS `jarduino.local`, NTP que corrige el RTC al conectar y 1×/día) y `api.*` (ESP8266WebServer en el puerto 80, todos los endpoints del contrato, errores `{"error","detalle"}`). Comando serie `W` para ver el estado de la WiFi (SSID, IP, RSSI, NTP). El riego sigue funcionando sin red. Aviso: en el banco el RSSI era muy bajo (~-85 dBm); en el sitio final de las válvulas hará falta un extensor.
-   3. **Menú de la tapa** — escrito 2026-10-03 (`menu.*`, ver [Menú y LCD](#menú-y-lcd-5-pulsadores)), compila sin avisos; falta probarlo en la tapa.
+   3. **Menú de la tapa** — hecho y probado en la tapa (2026-10-03). `menu.*`, ver [Menú y LCD](#menú-y-lcd-5-pulsadores).
    4. OTA y web app.
    5. Notificaciones.
 
