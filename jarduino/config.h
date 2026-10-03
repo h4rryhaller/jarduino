@@ -31,6 +31,9 @@ static const uint8_t BIT_ZONA[NUM_ZONAS] = {0, 1, 2, 3};
 #define BIT_CENTRO 2
 #define ANTIRREBOTE_MS     30
 #define PULSACION_LARGA_MS 800
+#define REPETICION_ESPERA_MS 500   // arriba/abajo mantenidos: empiezan a repetir...
+#define REPETICION_MS        120   // ...a este ritmo
+#define MENU_INACTIVIDAD_MS  60000 // sin tocar nada, el menú vuelve al inicio
 
 // ---- LCD ----
 #define LCD_COLUMNAS 16

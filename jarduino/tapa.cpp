@@ -4,6 +4,7 @@
 #include "configuracion.h"
 #include "reloj.h"
 #include "riego.h"
+#include "menu.h"
 #include "tapa.h"
 
 static LiquidCrystal_I2C lcd(ADDR_LCD, LCD_COLUMNAS, LCD_FILAS);
@@ -17,9 +18,12 @@ static uint32_t ultimoRefrescoMs = 0;
 static uint8_t lecturaAnterior = 0xFF, estable = 0xFF;
 static uint32_t ultimoCambioMs = 0, ultimaLecturaMs = 0, centroDesdeMs = 0;
 static bool largaDisparada = false;
+static uint8_t bitRepetido = 0xFF;  // arriba o abajo mantenido
+static uint32_t proximaRepeticionMs = 0;
+static int8_t cursorLcd = -1;       // columna del cursor parpadeante en la línea 2
 
 // La ROM de la LCD no tiene tildes: se quitan; la ñ está en 0xEE
-static void aLcd(const char *utf8, char *out, size_t tam) {
+void textoLcd(const char *utf8, char *out, size_t tam) {
   size_t n = 0;
   for (const uint8_t *p = (const uint8_t *)utf8; *p && n < tam - 1; p++) {
     if (*p < 0x80) { out[n++] = *p; continue; }
@@ -46,7 +50,7 @@ static char simboloZona(uint8_t n) {
   return config.zonas[n - 1].activo ? '.' : '-';
 }
 
-static void estadoCorto(uint8_t n, char *buf, size_t tam) {
+void estadoCortoZona(uint8_t n, char *buf, size_t tam) {
   const EstadoZona &z = riegoEstado(n);
   if (z.falloValvula) { strlcpy(buf, "err", tam); return; }
   if (z.pedida) {
@@ -60,16 +64,42 @@ static void estadoCorto(uint8_t n, char *buf, size_t tam) {
   strlcpy(buf, "off", tam);
 }
 
-static void escribirLinea(uint8_t fila, const char *texto) {
+// Devuelve true si ha escrito algo (y por tanto movido el cursor de la LCD)
+static bool escribirLinea(uint8_t fila, const char *texto) {
   char linea[LCD_COLUMNAS + 1];
   snprintf(linea, sizeof(linea), "%-16s", texto);
-  if (strcmp(linea, pintado[fila]) == 0) return;
+  if (strcmp(linea, pintado[fila]) == 0) return false;
   strcpy(pintado[fila], linea);
   lcd.setCursor(0, fila);
   lcd.print(linea);
+  return true;
+}
+
+static void colocarCursor(int8_t columna, bool movido) {
+  if (columna < 0) {
+    if (cursorLcd >= 0) lcd.noBlink();
+    cursorLcd = -1;
+    return;
+  }
+  if (columna == cursorLcd && !movido) return;
+  lcd.setCursor(columna, 1);
+  if (cursorLcd < 0) lcd.blink();
+  cursorLcd = columna;
+}
+
+static void pintarMenu() {
+  char linea0[LCD_COLUMNAS + 1], linea1[LCD_COLUMNAS + 1];
+  int8_t cursor;
+  menuPantalla(linea0, linea1, sizeof(linea0), cursor);
+  bool hayMensaje = millis() - mensajeDesdeMs < mensajeDuracionMs;
+  bool movido = escribirLinea(0, hayMensaje ? mensaje : linea0);
+  movido |= escribirLinea(1, linea1);
+  colocarCursor(cursor, movido);
 }
 
 static void pintar() {
+  if (menuActivo()) return pintarMenu();
+  colocarCursor(-1, false);
   char linea[LCD_COLUMNAS + 1];
 
   if (millis() - mensajeDesdeMs < mensajeDuracionMs) {
@@ -79,8 +109,8 @@ static void pintar() {
     const Fecha &f = relojAhora();
     if (relojResponde()) snprintf(hora, sizeof(hora), "%02u:%02u%c", f.hora, f.min, relojValido() ? ' ' : '!');
     else strlcpy(hora, "--:--?", sizeof(hora));
-    aLcd(config.zonas[seleccion].nombre, nombre, sizeof(nombre));
-    estadoCorto(seleccion + 1, estado, sizeof(estado));
+    textoLcd(config.zonas[seleccion].nombre, nombre, sizeof(nombre));
+    estadoCortoZona(seleccion + 1, estado, sizeof(estado));
     snprintf(linea, sizeof(linea), "%.6s%-6.6s %.3s", hora, nombre, estado);
     escribirLinea(0, linea);
   }
@@ -97,7 +127,7 @@ static void pintar() {
 }
 
 void tapaMensaje(const char *texto, uint32_t ms) {
-  aLcd(texto, mensaje, sizeof(mensaje));
+  textoLcd(texto, mensaje, sizeof(mensaje));
   mensajeDesdeMs = millis();
   mensajeDuracionMs = ms;
   pintar();
@@ -129,6 +159,22 @@ static bool subido(uint8_t antes, uint8_t ahora, uint8_t bit) {
   return bajado(ahora, antes, bit);
 }
 
+static bool pulsado(uint8_t bit) { return !(estable & (1 << bit)); }
+
+static void tecla(Tecla t) {
+  if (menuActivo()) {
+    menuTecla(t);
+    return;
+  }
+  switch (t) {
+    case Tecla::Izq: seleccion = (seleccion + NUM_ZONAS - 1) % NUM_ZONAS; break;
+    case Tecla::Der: seleccion = (seleccion + 1) % NUM_ZONAS; break;
+    case Tecla::Centro: pulsacionCentro(); break;
+    case Tecla::CentroLargo: menuAbrir(); break;
+    default: break;  // arriba/abajo no hacen nada en la pantalla de inicio
+  }
+}
+
 static void leerBotones() {
   if (millis() - ultimaLecturaMs < 10) return;
   ultimaLecturaMs = millis();
@@ -143,20 +189,36 @@ static void leerBotones() {
     uint8_t antes = estable;
     estable = lectura;
     mensajeDuracionMs = 0;  // cualquier botón quita el mensaje
-    if (bajado(antes, estable, BIT_IZQ)) seleccion = (seleccion + NUM_ZONAS - 1) % NUM_ZONAS;
-    if (bajado(antes, estable, BIT_DER)) seleccion = (seleccion + 1) % NUM_ZONAS;
+    if (bajado(antes, estable, BIT_IZQ)) tecla(Tecla::Izq);
+    if (bajado(antes, estable, BIT_DER)) tecla(Tecla::Der);
+    // Arriba y abajo se repiten mientras se mantienen (para cambiar valores)
+    if (bajado(antes, estable, BIT_ARRIBA) || bajado(antes, estable, BIT_ABAJO)) {
+      bitRepetido = bajado(antes, estable, BIT_ARRIBA) ? BIT_ARRIBA : BIT_ABAJO;
+      proximaRepeticionMs = millis() + REPETICION_ESPERA_MS;
+      tecla(bitRepetido == BIT_ARRIBA ? Tecla::Arriba : Tecla::Abajo);
+    }
     if (bajado(antes, estable, BIT_CENTRO)) {
       centroDesdeMs = millis();
       largaDisparada = false;
     }
-    if (subido(antes, estable, BIT_CENTRO) && !largaDisparada) pulsacionCentro();
+    if (subido(antes, estable, BIT_CENTRO) && !largaDisparada) tecla(Tecla::Centro);
     pintar();
   }
 
-  if (!(estable & (1 << BIT_CENTRO)) && !largaDisparada &&
-      millis() - centroDesdeMs >= PULSACION_LARGA_MS) {
+  if (bitRepetido != 0xFF) {
+    if (!pulsado(bitRepetido)) {
+      bitRepetido = 0xFF;
+    } else if ((int32_t)(millis() - proximaRepeticionMs) >= 0) {
+      proximaRepeticionMs += REPETICION_MS;
+      tecla(bitRepetido == BIT_ARRIBA ? Tecla::Arriba : Tecla::Abajo);
+      pintar();
+    }
+  }
+
+  if (pulsado(BIT_CENTRO) && !largaDisparada && millis() - centroDesdeMs >= PULSACION_LARGA_MS) {
     largaDisparada = true;
-    tapaMensaje("Menu: pendiente");
+    tecla(Tecla::CentroLargo);
+    pintar();
   }
 }
 
@@ -173,6 +235,7 @@ void tapaIniciar() {
 
 void tapaTick() {
   leerBotones();
+  menuTick();
   if (millis() - ultimoRefrescoMs >= 250) {
     ultimoRefrescoMs = millis();
     pintar();

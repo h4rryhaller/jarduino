@@ -52,6 +52,24 @@ El caudal es fuerte, así que normalmente se riegan varias zonas a la vez. Regla
 
 5 pulsadores sueltos en cruz (arriba, abajo, izquierda, derecha, centro) en vez de un joystick — la caja va fija en la pared, así que unos botones grandes son más fáciles de acertar. Mismo convenio de gestos que Ardutype: arriba/abajo mueven el cursor o cambian valores; derecha entra o avanza; izquierda vuelve atrás; pulsación central corta confirma (antes "OK corto"), pulsación central larga entra al menú o vuelve al principio (antes "OK largo"). En la pantalla de inicio, pulsación central corta sobre la zona resaltada activa o corta el riego manual de esa zona.
 
+Contenido del menú (fase 3, 2026-10-03; `jarduino/menu.*`):
+
+```
+Menú
+├─ Zonas
+│  └─ Zona 1..4
+│     ├─ Inicio        HH:MM
+│     ├─ Fin           HH:MM
+│     ├─ Días          L M X J V S D
+│     ├─ Regar ahora   N min (por defecto 15, máx. 240)
+│     └─ Parar
+├─ Parar todo
+├─ Fecha y hora      (por si no hay NTP)
+└─ Sistema           IP, WiFi, RSSI, NTP, tiempo encendido, fecha de compilación
+```
+
+Al editar, el cursor parpadea sobre el campo; arriba/abajo cambian el valor (mantenidos, se repiten), derecha/izquierda pasan de campo (izquierda en el primero cancela) y centro corto guarda. Las acciones (Parar, Parar todo) solo se lanzan con el centro, no con derecha. Centro largo vuelve al inicio sin guardar, y tras 60 s sin tocar nada también. Nombres de zona, zona habilitada (`activo`), compañía y notificaciones solo se cambian desde la web.
+
 ## API HTTP (implementada en la fase 2, 2026-10-02)
 
 - `GET/PUT /api/datetime`
@@ -80,7 +98,7 @@ Formato definido (2026-09-21), ver [`config.json.example`](./config.json.example
 4. Firmware (`jarduino/`), por fases, con tareas no bloqueantes y el riego independiente de la red:
    1. **Núcleo sin red** — hecho 2026-09-27, compila sin avisos y las reglas de compañía se han probado en una simulación en el PC; falta probarlo en el banco. `config.json` en LittleFS, RTC, horarios (si arranca a mitad de una ventana, riega lo que queda), relés escalonados con la regla del jardín, optos (interruptor manual, fallo de válvula), pantalla de inicio de la tapa y consola serie (`T`, `R`, `P`, `E`, `C`; ver `consola.h`).
    2. **WiFi + NTP + API HTTP** — hecho y probado sobre hardware real por WiFi (2026-10-02). `red.*` (WiFiManager con portal cautivo "Jarduino-setup", mDNS `jarduino.local`, NTP que corrige el RTC al conectar y 1×/día) y `api.*` (ESP8266WebServer en el puerto 80, todos los endpoints del contrato, errores `{"error","detalle"}`). Comando serie `W` para ver el estado de la WiFi (SSID, IP, RSSI, NTP). El riego sigue funcionando sin red. Aviso: en el banco el RSSI era muy bajo (~-85 dBm); en el sitio final de las válvulas hará falta un extensor.
-   3. Menú de la tapa.
+   3. **Menú de la tapa** — escrito 2026-10-03 (`menu.*`, ver [Menú y LCD](#menú-y-lcd-5-pulsadores)), compila sin avisos; falta probarlo en la tapa.
    4. OTA y web app.
    5. Notificaciones.
 
