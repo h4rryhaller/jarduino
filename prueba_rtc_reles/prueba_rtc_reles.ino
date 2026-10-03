@@ -31,7 +31,7 @@ const uint8_t RELE_OFF = !RELE_ON;
 const unsigned long AUTO_APAGADO_MS = 30000;
 
 // Bits de la placa de botones (medidos en la placa real, 2026-09-24)
-const uint8_t BIT_ARRIBA = 2, BIT_ABAJO = 0, BIT_IZQ = 1, BIT_DER = 4, BIT_CENTRO = 5;
+const uint8_t BIT_ARRIBA = 4, BIT_ABAJO = 6, BIT_IZQ = 5, BIT_DER = 0, BIT_CENTRO = 2;
 const unsigned long ANTIRREBOTE_MS = 30;
 
 LiquidCrystal_I2C lcd(ADDR_LCD, 16, 2);

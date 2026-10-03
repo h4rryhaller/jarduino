@@ -23,12 +23,12 @@ static const uint8_t PIN_RELE[NUM_ZONAS] = {13, 12, 14, 16};
 // con P0-P7 directos: zona n -> P(n-1). Zona 1=P0, 2=P1, 3=P2, 4=P3.
 static const uint8_t BIT_ZONA[NUM_ZONAS] = {0, 1, 2, 3};
 
-// Bits de la placa de botones (medidos con los botones soldados, 2026-09-24)
-#define BIT_ARRIBA 2
-#define BIT_ABAJO  0
-#define BIT_IZQ    1
-#define BIT_DER    4
-#define BIT_CENTRO 5
+// Bits de la placa de botones (medidos de nuevo tras recolocar los botones, 2026-10-03)
+#define BIT_ARRIBA 4
+#define BIT_ABAJO  6
+#define BIT_IZQ    5
+#define BIT_DER    0
+#define BIT_CENTRO 2
 #define ANTIRREBOTE_MS     30
 #define PULSACION_LARGA_MS 800
 

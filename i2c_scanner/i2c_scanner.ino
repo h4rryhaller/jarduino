@@ -8,13 +8,13 @@ const uint8_t ADDR_BOTONES = 0x20;
 struct Boton { uint8_t bit; const char *nombre; };
 const Boton BOTONES[] = {
   // bit = P del PCF8574; entre paréntesis, pin del conector de 16
-  // Medido en la placa real y confirmado con los botones soldados (2026-09-24);
+  // Medido de nuevo tras recolocar los botones (2026-10-03);
   // esta mochila no sigue el orden habitual
-  {2, "arriba"},     // P2 (11)
-  {0, "abajo"},      // P0 (13)
-  {1, "izquierda"},  // P1 (12)
-  {4, "derecha"},    // P4 (6)
-  {5, "centro"}      // P5 (5)
+  {4, "arriba"},     // P4 (6)
+  {6, "abajo"},      // P6
+  {5, "izquierda"},  // P5 (5)
+  {0, "derecha"},    // P0 (13)
+  {2, "centro"}      // P2 (11)
 };
 
 const char *identificar(uint8_t addr) {

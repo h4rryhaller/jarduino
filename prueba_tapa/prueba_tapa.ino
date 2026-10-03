@@ -16,13 +16,13 @@ LiquidCrystal_I2C lcd(ADDR_LCD, 16, 2);
 struct Boton { uint8_t bit; const char *nombre; };
 const Boton BOTONES[] = {
   // bit = P del PCF8574; entre paréntesis, pin del conector de 16
-  // Medido en la placa real y confirmado con los botones soldados (2026-09-24);
+  // Medido de nuevo tras recolocar los botones (2026-10-03);
   // esta mochila no sigue el orden habitual
-  {2, "arriba"},     // P2 (11)
-  {0, "abajo"},      // P0 (13)
-  {1, "izquierda"},  // P1 (12)
-  {4, "derecha"},    // P4 (6)
-  {5, "centro"}      // P5 (5)
+  {4, "arriba"},     // P4 (6)
+  {6, "abajo"},      // P6
+  {5, "izquierda"},  // P5 (5)
+  {0, "derecha"},    // P0 (13)
+  {2, "centro"}      // P2 (11)
 };
 
 uint8_t lecturaAnterior = 0xFF;
@@ -32,7 +32,8 @@ unsigned int pulsaciones = 0;
 
 uint8_t leerBotones() {
   if (Wire.requestFrom(ADDR_BOTONES, (uint8_t)1) != 1) return 0xFF;
-  return Wire.read();
+  // P3 se ignora: es el transistor de retroiluminación y siempre se lee a 0
+  return Wire.read() | (1 << 3);
 }
 
 void mostrar(const char *nombre) {
@@ -81,7 +82,7 @@ void loop() {
       bool ahora = !(lectura & (1 << b.bit));
       if (ahora && !antes) {
         pulsaciones++;
-        char texto[12];
+        char texto[16];
         snprintf(texto, sizeof(texto), "P%u %s", b.bit, b.nombre);
         Serial.printf("%s pulsado\n", texto);
         mostrar(texto);
@@ -92,7 +93,7 @@ void loop() {
     uint8_t nuevos = (estadoEstable & ~lectura) & ~asignados;
     for (uint8_t bit = 0; bit < 8; bit++) {
       if (nuevos & (1 << bit)) {
-        char texto[12];
+        char texto[16];
         snprintf(texto, sizeof(texto), "P%u ?", bit);
         Serial.printf("%s pulsado\n", texto);
         mostrar(texto);
