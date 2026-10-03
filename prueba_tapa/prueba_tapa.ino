@@ -19,7 +19,7 @@ const Boton BOTONES[] = {
   // Medido de nuevo tras recolocar los botones (2026-10-03);
   // esta mochila no sigue el orden habitual
   {4, "arriba"},     // P4 (6)
-  {6, "abajo"},      // P6
+  {6, "abajo"},      // P6 (4)
   {5, "izquierda"},  // P5 (5)
   {0, "derecha"},    // P0 (13)
   {2, "centro"}      // P2 (11)
