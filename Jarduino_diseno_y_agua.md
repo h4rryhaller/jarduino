@@ -12,18 +12,24 @@ Documento para leer con calma, 18 de septiembre de 2026. Recoge lo decidido en l
 
 Es un resumen de lo que quedó cerrado. Sigue sin haber código.
 
-**Alimentación y potencia (revisado 2026-09-21 sobre el prototipo real)**
-- Fuente única: un cargador de portátil Dell reaprovechado, **19V / 3,1A** (barril), ya conectado al lado de conmutación de los relés en el prototipo.
-- Conversor DC-DC **XL4005E1** (ajustable, hasta 5A/30V, ya en la caja de piezas del usuario), ajustado a 5,0V con el multímetro: alimenta el ESP8266, la bobina de los 4 relés y el resto de la lógica (LCD, RTC, los dos PCF8574).
-- Módulo de 4 relés con el jumper VCC/JD-VCC **puesto** (decisión revisada: con 5A de margen en el XL4005 no hace falta separar bobina y lógica en dos fuentes, al contrario que el plan original con un LM2596).
-- Los 19V, sin pasar por el buck, llegan también a los contactos de los relés y de ahí a cada electroválvula (dentro de su rango de 12-24V).
-- **Retirado** del prototipo: el módulo pequeño de red (100-240VAC→5V/3W) que alimentaba el ESP por separado — se quita el único cable de tensión de red que había en la placa, más simple y más seguro.
-- **Descartada** para este uso una fuente de 24V/5W (CX-4120) que el usuario tenía comprada a propósito: da como máximo ~208 mA, y una sola electroválvula ya pide 300-500 mA — insuficiente, y además reintroduciría cable de red en la placa. Se guarda para otro proyecto de bajo consumo.
+**Alimentación y potencia (rediseñada 2026-10-10, montada 2026-10-18)**
+- **Dos alimentaciones separadas**, porque las electroválvulas resultaron ser de **24 V AC** (ver sección de válvulas):
+  - **Válvulas: transformador 230 V AC → 24 V AC, 30 VA**, de hierro y encapsulado en resina, IP68, con enchufe Schuko (de los que se venden para bombas de estanque o LED; pesa 1,33 kg, así que es de 50 Hz y no electrónico; los "transformadores LED" electrónicos sacan alterna de alta frecuencia y no sirven para bobinas). 27,5 V AC medidos en vacío (~39 V de pico). El fabricante recomienda no pasar del 80 %: ~1 A útil, suficiente para las 4 zonas con apertura escalonada (~0,8-1 A), sin margen para una futura válvula general.
+  - **Fusible de 1,25 A lento en el cable rojo** del transformador, antes de repartir a los relés y a los interruptores manuales. El negro es el retorno común de las válvulas y de IN− de los optos, sin fusible. El secundario está aislado: no se une ni a tierra ni a la GND de la lógica.
+  - **Lógica: cargador de móvil Xiaomi de 5 V / 3 A** (5,1 V medidos), directo a la línea de 5 V: ESP8266, bobinas de los 4 relés, LCD, RTC y los dos PCF8574. Sin carga rápida negociada se queda en 5 V.
+  - **GND común entre el NodeMCU y las placas**, también cuando el NodeMCU va por USB al PC. El 2026-10-18 el escáner I²C no veía ninguna placa porque el cable de GND estaba en el VIN del NodeMCU: el cargador está aislado, así que no hubo corto, pero todo su lado quedaba ~5 V por encima de la GND del ESP.
+- Módulo de 4 relés con el jumper VCC/JD-VCC **puesto**: con los 3 A del cargador no hace falta separar bobina y lógica.
+- **Historial:** hasta 2026-10-10 todo salía de un cargador de portátil Dell (19 V / 3,1 A) con un buck **XL4005E1** a 5 V para la lógica y los 19 V directos a las válvulas. El Dell murió (4,5 V en vacío), y además 19 V DC no valían para bobinas de 24 V AC (en continua solo las frena la resistencia: 19 V / 43 Ω ≈ 8 W en una bobina de 2 W). Rectificar los 24 V AC para el XL4005 daría ~34-38 V, por encima de sus 32 V, de ahí la fuente de 5 V aparte.
+- **Retirado** del prototipo: el módulo pequeño de red (100-240VAC→5V/3W) que alimentaba el ESP por separado.
+- **Descartada** una fuente de 24V/5W (CX-4120): da como máximo ~208 mA, insuficiente para las válvulas. Se guarda para otro proyecto de bajo consumo.
 - Un interruptor manual en paralelo con el contacto de cada relé, para regar a mano aunque el ESP falle.
 
 **Estado de cada válvula**
-- Un optoacoplador PC817 por zona, sobre la línea de 19 V hacia la válvula. Sirve tanto si abre el relé como si abre el interruptor manual.
-- **Pedido 2026-09-21**: módulo Hailege de 4 canales PC817 ya montado (resistencia de entrada y salida incluidas, rango 3,6-30V — cubre los 19V sin problema), en vez de PC817 sueltos + resistencias. Un único módulo cubre las 4 zonas. Al llegar: comprobar en la ficha si la salida de cada canal es activa alta o baja, y si ya trae pull-up de salida. El usuario tiene además un buen kit de resistencias variado a mano, por si hiciera falta alguna suelta en otro punto.
+- Un optoacoplador PC817 por zona, sobre la línea de 24 V AC hacia la válvula. Sirve tanto si abre el relé como si abre el interruptor manual. IN+ al punto común de relé, interruptor manual y cable de la válvula; IN− al negro (común sin fusible).
+- **1N4007 en serie con cada IN+** (ánodo hacia el relé, raya hacia IN+; soldados 2026-10-18): bloquea el semiciclo negativo, que el LED del PC817 no aguanta (6 V en inversa). **No en antiparalelo entre IN+ e IN−**: la resistencia está dentro del módulo, así que ese diodo cortocircuitaría el transformador en cada semiciclo negativo. Montado al revés no hay corto, pero el opto nunca detecta y su LED queda en ruptura inversa.
+- Resistencia de entrada del módulo: 3 kΩ (`302`). Con ~39 V de pico da ~12 mA por el LED y ~0,12 W en la resistencia (menos que con los 30 V DC del rango del módulo): no hace falta resistencia extra.
+- **La salida parpadea a 50 Hz** (el LED solo conduce en un semiciclo). Se filtra por firmware (2026-10-18): lectura cada 5 ms y "con tensión" si se ve un 0 en una ventana de 40 ms, más el antirrebote de 300 ms. Descartados los condensadores: 10 µF solos, con el pull-up débil del PCF8574, tardarían más de 1 s en soltar y superarían `MARGEN_OPTO_MS` (se tomaría por el interruptor manual); harían falta 10 µF + 10 kΩ a 5 V por zona.
+- **Pedido 2026-09-21**: módulo Hailege de 4 canales PC817 ya montado (resistencia de entrada y salida incluidas, rango 3,6-30V DC), en vez de PC817 sueltos + resistencias. Un único módulo cubre las 4 zonas. Al llegar: comprobar en la ficha si la salida de cada canal es activa alta o baja, y si ya trae pull-up de salida. El usuario tiene además un buen kit de resistencias variado a mano, por si hiciera falta alguna suelta en otro punto.
 
 **Lógica y pantalla**
 - ESP8266 NodeMCU.
@@ -97,7 +103,7 @@ Esto también te dice cuánto cae la presión al regar todo junto, y por qué el
 
 **Cuidado con las electroválvulas.** Muchas de las económicas, con membrana pilotada, necesitan una presión mínima (del orden de 0,3-0,5 bar) para abrir y cerrar bien, y tienen también un máximo. Si bajas mucho la presión, pueden no abrir del todo o no cerrar.
 
-**Resuelto (2026-09-21):** las electroválvulas instaladas no tienen marca visible (llevan tiempo a la intemperie), funcionan entre 12 y 24 V — encajan sin problema con los 19V del cargador Dell reaprovechado — y son **normalmente cerradas (NC)**. Sin ficha, la presión mínima/máxima de apertura sigue sin confirmar; se verá en la práctica al probar con el reductor.
+**Resuelto (2026-09-21):** las electroválvulas instaladas no tienen marca visible (llevan tiempo a la intemperie), y son **normalmente cerradas (NC)**. **Corregido 2026-10-10:** al revisarlas resultaron ser de **24 V AC** (al menos una Marlux de 24 V AC y 2 W; bobinas de 43 Ω y 38 Ω; una tercera de 10 Ω sin marca se sustituye por una de 24 V AC). Sin diodo en antiparalelo en la bobina: en alterna cortocircuitaría medio ciclo. Sin ficha, la presión mínima/máxima de apertura sigue sin confirmar; se verá en la práctica al probar con el reductor.
 
 **Tipo de riego (resuelto 2026-09-21):** todo es goteo. Huerto y huerta llevan derivaciones de ~15 mm con goteros; el jardín también es goteo, pero con derivaciones de menor diámetro. Esto explica por qué hace falta reducir tanto la presión de red: los goteros suelen trabajar a 1-2 bar, muy por debajo de la presión "bastante fuerte" de una tubería de 32 mm. **Aviso de mantenimiento:** los goteros se ensucian con el sedimento del agua y hay que revisarlos de vez en cuando — no lo resuelve el firmware, pero conviene recordarlo (posible mejora futura: aviso periódico de mantenimiento).
 
@@ -165,10 +171,10 @@ Todo esto casa con las notificaciones ya previstas: una fuga con todo cerrado me
 ## 7. Otros problemas que no son código
 
 - **Golpe de ariete.** Es probablemente la causa de los reventones que mencionas: una válvula solenoide que cierra rápido genera un pico de presión. Los cierres escalonados ayudan, y a veces se añade un pequeño vaso de expansión.
-- **Fuente de 12 V.** Cuatro válvulas a 0,3-0,5 A cada una suman 1,2-2 A, más el resto. Dimensiona con margen y usa el arranque escalonado. Cada solenoide necesita su diodo 1N4007 en antiparalelo, para absorber el pico al cortar la bobina. En lo que leí de los chats no aparece mencionado.
+- **Alimentación de las válvulas.** Dimensiona con margen y usa el arranque escalonado. *(Actualizado 2026-10-10: las válvulas son de 24 V AC, ~0,2-0,3 A cada una abiertas; el diodo en antiparalelo solo vale para bobinas de continua, en alterna no se pone. Ver sección 2.)*
 - **Humedad e intemperie.** Cajas estancas IP65, prensaestopas, y protección para la electrónica frente a condensación. Un NodeMCU en una caja cerrada al sol se calienta.
 - **Pila del DS3231.** El módulo ZS-042 tiene un circuito de carga pensado para pilas recargables. Con una CR2032 normal hay que quitar el diodo o la resistencia del circuito de carga.
-- **LED de estado por zona.** El README original pedía uno por botón. Puedes colgarlo de la línea de 12 V con una resistencia (unos 1 kΩ), sin usar ningún GPIO.
+- **LED de estado por zona.** El README original pedía uno por botón. Puedes colgarlo de la línea de la válvula con una resistencia, sin usar ningún GPIO (con 24 V AC, LED con diodo en serie como en los optos).
 
 ## 8. Lista de la compra tentativa
 

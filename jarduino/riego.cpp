@@ -8,9 +8,13 @@ static uint32_t ultimaManiobraMs = 0;
 static bool hayManiobraPrevia = false;
 static uint32_t releCambioMs[NUM_ZONAS];
 
-// Lectura de los optos con antirrebote
+// Lectura de los optos con antirrebote. Con 24 V AC el opto solo conduce en
+// un semiciclo y su salida parpadea a 50 Hz: se lee cada OPTO_LECTURA_MS y una
+// zona tiene tensión si se ha visto a 0 alguna vez en la ventana.
 static bool optosOk = false, optosLeidos = false;
-static uint8_t optoCrudoAnterior = 0xFF;
+static uint8_t optoVistos = 0;         // bits vistos a 0 en la ventana actual
+static uint8_t optoTensionAnterior = 0;
+static uint32_t optoVentanaMs = 0;
 static uint32_t optoCambioMs = 0;
 static uint32_t ultimaLecturaOptoMs = 0;
 
@@ -102,7 +106,7 @@ bool riegoHayAgua() {
 bool riegoOptosResponden() { return optosOk; }
 
 static void leerOptos() {
-  if (millis() - ultimaLecturaOptoMs < 20) return;
+  if (millis() - ultimaLecturaOptoMs < OPTO_LECTURA_MS) return;
   ultimaLecturaOptoMs = millis();
 
   bool responde = Wire.requestFrom((uint8_t)ADDR_ZONAS, (uint8_t)1) == 1;
@@ -112,16 +116,21 @@ static void leerOptos() {
   optosLeidos = true;
   if (!responde) return;
 
-  uint8_t crudo = Wire.read();
-  if (crudo != optoCrudoAnterior) {
-    optoCrudoAnterior = crudo;
+  optoVistos |= (uint8_t)~Wire.read();  // activa a nivel bajo
+  if (millis() - optoVentanaMs < OPTO_VENTANA_MS) return;
+  optoVentanaMs = millis();
+  uint8_t conTension = optoVistos;
+  optoVistos = 0;
+
+  if (conTension != optoTensionAnterior) {
+    optoTensionAnterior = conTension;
     optoCambioMs = millis();
     return;
   }
   if (millis() - optoCambioMs < OPTO_ESTABLE_MS) return;
 
   for (uint8_t i = 0; i < NUM_ZONAS; i++) {
-    bool tension = !(crudo & (1 << BIT_ZONA[i]));  // activa a nivel bajo
+    bool tension = conTension & (1 << BIT_ZONA[i]);
     if (tension != zonas[i].tension) {
       zonas[i].tension = tension;
       Serial.printf("Zona %u: %s tension\n", i + 1, tension ? "con" : "sin");

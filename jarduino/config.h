@@ -41,6 +41,8 @@ static const uint8_t BIT_ZONA[NUM_ZONAS] = {0, 1, 2, 3};
 
 // ---- Riego ----
 #define PASO_VALVULAS_MS    4000  // entre dos maniobras de válvula (golpe de ariete)
+#define OPTO_LECTURA_MS     5     // cada medio ciclo de 50 Hz caen 2 lecturas
+#define OPTO_VENTANA_MS     40    // 2 ciclos de red: con tensión siempre se ve un 0
 #define OPTO_ESTABLE_MS     300   // antirrebote de la lectura de los optos
 #define FALLO_VALVULA_MS    3000  // relé activado y sin tensión en la válvula
 #define MARGEN_OPTO_MS      1000  // lo que tarda el opto en seguir a un cambio de relé
