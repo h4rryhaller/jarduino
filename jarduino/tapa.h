@@ -16,6 +16,9 @@
 void tapaIniciar();
 void tapaTick();
 void tapaMensaje(const char *texto, uint32_t ms = 2000);  // en la línea 1
+// Pinta las dos líneas en el acto, sin esperar a tapaTick(). Para la OTA, que
+// bloquea el loop mientras dura la subida.
+void tapaPintarAhora(const char *linea0, const char *linea1);
 
 // Compartidas con el menú
 void textoLcd(const char *utf8, char *out, size_t tam);   // quita tildes, ñ de la ROM

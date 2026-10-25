@@ -6,4 +6,7 @@
 void apiIniciar();  // tras redIniciar()
 void apiTick();     // atiende peticiones; no bloquea el riego
 
+#include <ESP8266WebServer.h>
+ESP8266WebServer &apiServidor();  // para registrar /update desde ota.cpp
+
 #endif

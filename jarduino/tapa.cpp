@@ -133,6 +133,12 @@ void tapaMensaje(const char *texto, uint32_t ms) {
   pintar();
 }
 
+void tapaPintarAhora(const char *linea0, const char *linea1) {
+  colocarCursor(-1, false);
+  escribirLinea(0, linea0);
+  escribirLinea(1, linea1);
+}
+
 static void pulsacionCentro() {
   uint8_t n = seleccion + 1;
   const EstadoZona &z = riegoEstado(n);

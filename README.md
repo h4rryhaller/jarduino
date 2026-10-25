@@ -87,7 +87,14 @@ Cada zona registra `activada_por`: `automatico` | `manual_switch` | `manual_api`
 
 ## OTA
 
-Se incluye desde el primer firmware (`ArduinoOTA` + subida web en `/update`), con contraseña obligatoria fuera de git. Partición con espacio OTA (p. ej. 4 MB FS / 2 MB OTA / ~1019 KB). El firmware rechaza o aplaza una actualización si hay riego activo, y muestra progreso en la LCD. El ESP8266 no hace rollback automático — los interruptores manuales en paralelo son la red de seguridad si una subida deja el firmware sin arrancar. La primera subida siempre es por cable.
+Hecha 2026-10-25 (`ota.*`), dos formas de subir el firmware por WiFi:
+
+- **Desde el IDE (ArduinoOTA):** en *Herramientas → Puerto* aparece `jarduino` como puerto de red (puerto 8266). Pide la clave.
+- **Por web:** `http://jarduino.local/update` (formulario) o `curl -u admin:<clave> -F firmware=@jarduino.ino.bin http://jarduino.local/update`. El `.bin` sale de *Programa → Exportar binario compilado*. Respuestas JSON como el resto de la API: 401 sin clave, 409 `riego_activo`, 400 `sin_firmware`, 500 `ota_fallida`.
+
+La clave va en `jarduino/secretos.h` (en `.gitignore`; plantilla en `secretos.h.example`). Sin ese fichero no compila. **Con agua abierta no se acepta ninguna subida** (`riegoHayAgua()`: relé, interruptor manual o maniobra pendiente), porque la subida bloquea el loop y los relés no se podrían mover: la web responde 409 y el IDE solo ve que el ESP no contesta. Si un horario empieza durante la subida, al reiniciar riega lo que queda de la ventana. El progreso sale en la LCD.
+
+Hace falta un esquema de flash con espacio OTA (*Herramientas → Flash Size*, p. ej. `4MB (FS:2MB OTA:~1019KB)`): el firmware tiene que caber dos veces en lo que queda fuera del FS. Cambiar el esquema mueve el LittleFS y se pierde `config.json` (se regenera con los valores por defecto). El ESP8266 no hace rollback automático: los interruptores manuales en paralelo son la red de seguridad si una subida deja el firmware sin arrancar. La primera subida con OTA siempre es por cable.
 
 ## `config.json`
 
@@ -102,7 +109,7 @@ Formato definido (2026-09-21), ver [`config.json.example`](./config.json.example
    1. **Núcleo sin red** — hecho 2026-09-27, compila sin avisos y las reglas de compañía se han probado en una simulación en el PC. Probado en el banco (2026-10-25): relés y detección de las 4 zonas por los optos; falta probar los interruptores manuales y la regla del jardín con las válvulas en su sitio. `config.json` en LittleFS, RTC, horarios (si arranca a mitad de una ventana, riega lo que queda), relés escalonados con la regla del jardín, optos (interruptor manual, fallo de válvula), pantalla de inicio de la tapa y consola serie (`T`, `R`, `P`, `E`, `C`; ver `consola.h`).
    2. **WiFi + NTP + API HTTP** — hecho y probado sobre hardware real por WiFi (2026-10-02). `red.*` (WiFiManager con portal cautivo "Jarduino-setup", mDNS `jarduino.local`, NTP que corrige el RTC al conectar y 1×/día) y `api.*` (ESP8266WebServer en el puerto 80, todos los endpoints del contrato, errores `{"error","detalle"}`). Comando serie `W` para ver el estado de la WiFi (SSID, IP, RSSI, NTP). El riego sigue funcionando sin red. Aviso: en el banco el RSSI era muy bajo (~-85 dBm); en el sitio final de las válvulas hará falta un extensor.
    3. **Menú de la tapa** — hecho y probado en la tapa (2026-10-03). `menu.*`, ver [Menú y LCD](#menú-y-lcd-5-pulsadores).
-   4. OTA y web app.
+   4. **OTA** — hecha y probada 2026-10-25 (ver [OTA](#ota)). Pendiente la web app.
    5. Notificaciones.
 
 ## Mejoras futuras: detección de fugas

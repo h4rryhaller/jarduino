@@ -190,6 +190,8 @@ static void getSistema() {
   enviarJson(200, doc);
 }
 
+ESP8266WebServer &apiServidor() { return server; }
+
 void apiIniciar() {
   server.on("/api/status", HTTP_GET, getStatus);
   server.on(UriBraces("/api/status/{}"), HTTP_GET, getStatusZona);

@@ -1,5 +1,7 @@
 # Configuración real con credenciales (usar config.json.example como plantilla)
 config.json
+# Clave de la OTA (usar jarduino/secretos.h.example como plantilla)
+jarduino/secretos.h
 
 # Artefactos de compilación de Arduino
 build/
