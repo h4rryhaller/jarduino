@@ -119,7 +119,11 @@ static void leerOptos() {
   optoVistos |= (uint8_t)~Wire.read();  // activa a nivel bajo
   if (millis() - optoVentanaMs < OPTO_VENTANA_MS) return;
   optoVentanaMs = millis();
-  uint8_t conTension = optoVistos;
+  // Solo los bits de las zonas: un pin libre que oscile reiniciaría el
+  // antirrebote y no se actualizaría ninguna zona.
+  uint8_t mascara = 0;
+  for (uint8_t i = 0; i < NUM_ZONAS; i++) mascara |= 1 << BIT_ZONA[i];
+  uint8_t conTension = optoVistos & mascara;
   optoVistos = 0;
 
   if (conTension != optoTensionAnterior) {

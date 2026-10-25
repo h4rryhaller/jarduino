@@ -10,7 +10,10 @@
 #include <Wire.h>
 
 const uint8_t ADDR_ZONAS = 0x26;
-const uint8_t BIT_ZONA[4] = {4, 2, 1, 0};  // zonas 1-4 = P4, P2, P1, P0
+const uint8_t BIT_ZONA[4] = {4, 7, 6, 5};  // zonas 1-4 = P4, P7, P6, P5 (ver config.h)
+// false: el escaneo sigue cada 2 s pero solo se imprime cuando la 0x26
+// aparece o desaparece, para que no tape la traza del puerto.
+const bool TRAZA_ESCANEO = false;
 
 bool zonasPresente = false;
 uint8_t ultimoPuerto = 0;
@@ -29,20 +32,29 @@ const char *estadoBus(uint8_t s) {
 }
 
 void escanear() {
-  Serial.printf("\nLineas I2C: %s\n", estadoBus(Wire.status()));
-  int encontrados = 0;
   bool antes = zonasPresente;
-  zonasPresente = false;
-  for (uint8_t addr = 1; addr < 127; addr++) {
-    Wire.beginTransmission(addr);
-    if (Wire.endTransmission() == 0) {
-      Serial.printf("  0x%02X%s\n", addr, addr == ADDR_ZONAS ? "  <- placa de zonas" : "");
-      encontrados++;
-      if (addr == ADDR_ZONAS) zonasPresente = true;
+  Wire.beginTransmission(ADDR_ZONAS);
+  bool presente = Wire.endTransmission() == 0;
+  if (!TRAZA_ESCANEO) {
+    if (presente && !antes) Serial.println("Placa de zonas (0x26) OK");
+    if (!presente) Serial.println("La placa de zonas (0x26) NO responde");
+    zonasPresente = presente;
+    puertoLeido = false;  // vuelve a imprimir el puerto cada 2 s aunque no cambie
+  } else {
+    Serial.printf("\nLineas I2C: %s\n", estadoBus(Wire.status()));
+    int encontrados = 0;
+    zonasPresente = false;
+    for (uint8_t addr = 1; addr < 127; addr++) {
+      Wire.beginTransmission(addr);
+      if (Wire.endTransmission() == 0) {
+        Serial.printf("  0x%02X%s\n", addr, addr == ADDR_ZONAS ? "  <- placa de zonas" : "");
+        encontrados++;
+        if (addr == ADDR_ZONAS) zonasPresente = true;
+      }
     }
+    Serial.printf("%d dispositivo(s)%s\n", encontrados,
+                  zonasPresente ? "" : " -- la 0x26 NO responde");
   }
-  Serial.printf("%d dispositivo(s)%s\n", encontrados,
-                zonasPresente ? "" : " -- la 0x26 NO responde");
 
   if (zonasPresente && !antes) {
     Wire.beginTransmission(ADDR_ZONAS);

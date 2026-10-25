@@ -20,8 +20,10 @@ static const uint8_t PIN_RELE[NUM_ZONAS] = {13, 12, 14, 16};
 #define RELE_OFF HIGH
 
 // Bit de la placa de zonas para cada zona. Módulo PCF8574 GERUI (2026-10-02)
-// con P0-P7 directos: zona n -> P(n-1). Zona 1=P0, 2=P1, 3=P2, 4=P3.
-static const uint8_t BIT_ZONA[NUM_ZONAS] = {0, 1, 2, 3};
+// sin serigrafía; la tira va al revés (mapeada con prueba_zonas, 2026-10-25):
+// 1.er pin probablemente INT, luego P7, P6, P5, P4... Zona 1 = P4 (5.º pin),
+// 2 = P7 (2.º), 3 = P6 (3.º), 4 = P5 (4.º).
+static const uint8_t BIT_ZONA[NUM_ZONAS] = {4, 7, 6, 5};
 
 // Bits de la placa de botones (medidos de nuevo tras recolocar los botones, 2026-10-03)
 #define BIT_ARRIBA 4
