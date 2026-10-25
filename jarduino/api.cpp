@@ -2,6 +2,7 @@
 #include <ESP8266WebServer.h>
 #include <uri/UriBraces.h>
 #include <ArduinoJson.h>
+#include <StreamString.h>
 
 #include "config.h"
 #include "configuracion.h"
@@ -10,6 +11,8 @@
 #include "rtc.h"
 #include "red.h"
 #include "api.h"
+#include "consola.h"
+#include "registro.h"
 
 static ESP8266WebServer server(HTTP_PORT);
 
@@ -190,6 +193,22 @@ static void getSistema() {
   enviarJson(200, doc);
 }
 
+static void getLog() {
+  server.send(200, "text/plain; charset=utf-8", registro.texto());
+}
+
+static void postConsola() {
+  JsonDocument doc;
+  if (deserializeJson(doc, server.arg("plain")))
+    return enviarError(400, "json_no_valido", "El cuerpo no es JSON válido");
+  const char *orden = doc["orden"] | "";
+  if (!orden[0] || strlen(orden) >= 40)
+    return enviarError(400, "orden_no_valida", "Usa \"orden\": \"E\" (máximo 39 caracteres)");
+  StreamString respuesta;
+  consolaEjecutar(orden, respuesta);
+  server.send(200, "text/plain; charset=utf-8", (const String &)respuesta);
+}
+
 ESP8266WebServer &apiServidor() { return server; }
 
 void apiIniciar() {
@@ -205,11 +224,13 @@ void apiIniciar() {
   server.on(UriBraces("/api/riego/{}/detener"), HTTP_POST, postDetener);
 
   server.on("/api/sistema", HTTP_GET, getSistema);
+  server.on("/api/log", HTTP_GET, getLog);
+  server.on("/api/consola", HTTP_POST, postConsola);
 
   server.onNotFound([]() { enviarError(404, "no_encontrado", server.uri().c_str()); });
 
   server.begin();
-  Serial.println("API HTTP en el puerto 80");
+  registro.println("API HTTP en el puerto 80");
 }
 
 void apiTick() {

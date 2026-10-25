@@ -53,6 +53,7 @@ static const uint8_t BIT_ZONA[NUM_ZONAS] = {4, 7, 6, 5};
 
 // ---- Persistencia ----
 #define CONFIG_FILE_PATH "/config.json"
+#define REGISTRO_BYTES   6144  // log en RAM para /api/log (~80-100 líneas)
 
 // ---- Red (fase 2) ----
 #define HTTP_PORT       80

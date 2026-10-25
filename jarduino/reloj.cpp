@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "reloj.h"
+#include "registro.h"
 
 static Fecha ahora;
 static bool responde = false, perdioHora = false;
@@ -14,7 +15,7 @@ void relojTick() {
   responde = rtcLeer(ahora);
   if (responde) perdioHora = rtcPerdioHora();
   if (responde != antes || !leidoAlgunaVez)
-    Serial.println(responde ? "RTC (0x68) OK" : "El RTC (0x68) no responde");
+    registro.println(responde ? "RTC (0x68) OK" : "El RTC (0x68) no responde");
   leidoAlgunaVez = true;
 }
 

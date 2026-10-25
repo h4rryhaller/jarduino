@@ -7,6 +7,7 @@
 #include "config.h"
 #include "rtc.h"
 #include "red.h"
+#include "registro.h"
 
 static bool sincronizado = false;      // el RTC se ha corregido con NTP al menos una vez
 static uint32_t ultimoSyncMs = 0;
@@ -27,7 +28,7 @@ static void sincronizarRtcDesdeNtp() {
   if (rtcEscribir(f)) {
     sincronizado = true;
     ultimoSyncMs = millis();
-    Serial.printf("RTC sincronizado por NTP: %04u-%02u-%02u %02u:%02u:%02u\n", f.anio, f.mes, f.dia,
+    registro.printf("RTC sincronizado por NTP: %04u-%02u-%02u %02u:%02u:%02u\n", f.anio, f.mes, f.dia,
                   f.hora, f.min, f.seg);
   }
 }
@@ -45,17 +46,17 @@ void redIniciar() {
   // nunca el arranque si el router está caído.
   wm.setConnectTimeout(20);
   wm.setConfigPortalTimeout(PORTAL_TIMEOUT_S);
-  Serial.println("WiFi: autoConnect (portal \"" AP_SETUP "\" si no hay credenciales)");
+  registro.println("WiFi: autoConnect (portal \"" AP_SETUP "\" si no hay credenciales)");
   if (wm.autoConnect(AP_SETUP)) {
-    Serial.print("WiFi conectado, IP: ");
-    Serial.println(WiFi.localIP());
+    registro.print("WiFi conectado, IP: ");
+    registro.println(WiFi.localIP());
     if (MDNS.begin(HOSTNAME)) {
       MDNS.addService("http", "tcp", HTTP_PORT);
       mdnsOk = true;
-      Serial.println("mDNS: http://" HOSTNAME ".local");
+      registro.println("mDNS: http://" HOSTNAME ".local");
     }
   } else {
-    Serial.println("WiFi: sin conexion (timeout del portal). Sigo offline con el RTC.");
+    registro.println("WiFi: sin conexion (timeout del portal). Sigo offline con el RTC.");
   }
 
   // Arranca SNTP con la zona horaria; sincroniza en cuanto haya red.

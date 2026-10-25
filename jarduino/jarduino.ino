@@ -2,7 +2,8 @@
 // Fase 1: todo lo que riega sin red (horarios, reglas de compañía, relés,
 // optos, tapa y consola serie).
 // Fase 2: WiFi (portal cautivo), NTP (corrige el RTC), API HTTP y mDNS.
-// Fase 4: OTA (ArduinoOTA y subida web en /update), nunca con riego activo.
+// Fase 4: OTA (ArduinoOTA y subida web en /update), nunca con riego activo,
+// y la web app en http://jarduino.local/
 // El riego nunca depende de la red. Ver README.md del proyecto.
 
 #include <Wire.h>
@@ -16,13 +17,15 @@
 #include "red.h"
 #include "api.h"
 #include "ota.h"
+#include "web.h"
+#include "registro.h"
 
 void setup() {
   riegoIniciar();  // antes que nada: relés apagados
 
   Serial.begin(115200);
-  Serial.println();
-  Serial.println("Jarduino arrancando");
+  registro.println();
+  registro.println("Jarduino arrancando");
 
   Wire.begin(PIN_SDA, PIN_SCL);
   riegoIniciarOptos();
@@ -33,8 +36,9 @@ void setup() {
   redIniciar();  // WiFi + NTP + mDNS (puede abrir el portal con timeout)
   apiIniciar();  // API HTTP en el puerto 80
   otaIniciar();  // ArduinoOTA + /update (necesita secretos.h)
+  webIniciar();  // web app en /
 
-  Serial.println("Listo. Escribe una orden o una linea vacia + E para el estado");
+  registro.println("Listo. Escribe una orden o una linea vacia + E para el estado");
 }
 
 void loop() {

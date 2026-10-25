@@ -6,49 +6,49 @@
 #include "red.h"
 #include "consola.h"
 
-static void imprimirEstado() {
+static void imprimirEstado(Print &out) {
   const Fecha &f = relojAhora();
   if (relojResponde())
-    Serial.printf("Hora: %04u-%02u-%02u %02u:%02u:%02u%s\n", f.anio, f.mes, f.dia, f.hora, f.min,
+    out.printf("Hora: %04u-%02u-%02u %02u:%02u:%02u%s\n", f.anio, f.mes, f.dia, f.hora, f.min,
                   f.seg, relojValido() ? "" : " (perdio la hora)");
   else
-    Serial.println("Hora: el RTC no responde");
-  if (!riegoOptosResponden()) Serial.println("Optos: la placa de zonas no responde");
+    out.println("Hora: el RTC no responde");
+  if (!riegoOptosResponden()) out.println("Optos: la placa de zonas no responde");
 
   for (uint8_t n = 1; n <= NUM_ZONAS; n++) {
     const EstadoZona &z = riegoEstado(n);
-    Serial.printf("Zona %u %-12s rele=%u tension=%u pedida=%u compania=%u fallo=%u origen=%s restante=%lus\n",
+    out.printf("Zona %u %-12s rele=%u tension=%u pedida=%u compania=%u fallo=%u origen=%s restante=%lus\n",
                   n, config.zonas[n - 1].nombre, z.rele, z.tension, z.pedida, z.porCompania,
                   z.falloValvula, origenTexto(z.activadaPor), (unsigned long)riegoRestanteSeg(n));
   }
 }
 
-static void ejecutar(const char *orden) {
+void consolaEjecutar(const char *orden, Print &out) {
   unsigned a, me, d, h, mi, s, n, minutos;
   if (sscanf(orden, "T%u-%u-%u %u:%u:%u", &a, &me, &d, &h, &mi, &s) == 6) {
     Fecha f = {(uint16_t)a, (uint8_t)me, (uint8_t)d, (uint8_t)h, (uint8_t)mi, (uint8_t)s};
-    Serial.println(rtcEscribir(f) ? "RTC puesto en hora" : "Fecha no valida o el RTC no responde");
+    out.println(rtcEscribir(f) ? "RTC puesto en hora" : "Fecha no valida o el RTC no responde");
   } else if (sscanf(orden, "R %u %u", &n, &minutos) == 2) {
-    if (!riegoIniciarZona(n, minutos * 60UL, Origen::ManualApi)) Serial.println("Zona o duracion no validas");
+    if (!riegoIniciarZona(n, minutos * 60UL, Origen::ManualApi)) out.println("Zona o duracion no validas");
   } else if (sscanf(orden, "P %u", &n) == 1) {
     riegoDetenerZona(n);
   } else if (strcmp(orden, "P") == 0) {
     riegoDetenerTodo();
   } else if (strcmp(orden, "E") == 0) {
-    imprimirEstado();
+    imprimirEstado(out);
   } else if (strcmp(orden, "C") == 0) {
     JsonDocument doc;
     configuracionAJson(config, doc);
-    serializeJsonPretty(doc, Serial);
-    Serial.println();
+    serializeJsonPretty(doc, out);
+    out.println();
   } else if (strcmp(orden, "W") == 0) {
     if (redConectada())
-      Serial.printf("WiFi: conectado a \"%s\"  IP %s  RSSI %d dBm  NTP=%s\n", redSsid().c_str(),
+      out.printf("WiFi: conectado a \"%s\"  IP %s  RSSI %d dBm  NTP=%s\n", redSsid().c_str(),
                     redIp().c_str(), redRssi(), ntpSincronizado() ? "si" : "no");
     else
-      Serial.printf("WiFi: SIN conexion (SSID guardado: \"%s\")\n", redSsid().c_str());
+      out.printf("WiFi: SIN conexion (SSID guardado: \"%s\")\n", redSsid().c_str());
   } else {
-    Serial.println("Ordenes: T2026-09-24 18:30:00 | R <zona> <min> | P [zona] | E | C | W");
+    out.println("Ordenes: T2026-09-24 18:30:00 | R <zona> <min> | P [zona] | E | C | W");
   }
 }
 
@@ -64,6 +64,6 @@ void consolaTick() {
     }
     buf[n] = '\0';
     n = 0;
-    if (buf[0]) ejecutar(buf);
+    if (buf[0]) consolaEjecutar(buf, Serial);
   }
 }

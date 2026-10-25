@@ -6,6 +6,7 @@
 #include "riego.h"
 #include "menu.h"
 #include "tapa.h"
+#include "registro.h"
 
 static LiquidCrystal_I2C lcd(ADDR_LCD, LCD_COLUMNAS, LCD_FILAS);
 
@@ -235,7 +236,7 @@ void tapaIniciar() {
 
   Wire.beginTransmission(ADDR_BOTONES);
   Wire.write(0xFF);  // entradas con pull-up débil
-  if (Wire.endTransmission() != 0) Serial.println("La placa de botones (0x20) no responde");
+  if (Wire.endTransmission() != 0) registro.println("La placa de botones (0x20) no responde");
   tapaMensaje("Jarduino", 1500);
 }
 

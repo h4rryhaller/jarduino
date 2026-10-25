@@ -2,6 +2,7 @@
 #include "config.h"
 #include "configuracion.h"
 #include "riego.h"
+#include "registro.h"
 
 static EstadoZona zonas[NUM_ZONAS];
 static uint32_t ultimaManiobraMs = 0;
@@ -45,7 +46,7 @@ static void ponerRele(uint8_t i, bool on) {
   zonas[i].rele = on;
   releCambioMs[i] = millis();
   digitalWrite(PIN_RELE[i], on ? RELE_ON : RELE_OFF);
-  Serial.printf("Zona %u: rele %s\n", i + 1, on ? "ON" : "OFF");
+  registro.printf("Zona %u: rele %s\n", i + 1, on ? "ON" : "OFF");
 }
 
 void riegoIniciar() {
@@ -72,13 +73,13 @@ bool riegoIniciarZona(uint8_t n, uint32_t segundos, Origen origen) {
   z.activadaPor = origen;
   z.inicioMs = millis();
   z.duracionMs = segundos * 1000;
-  Serial.printf("Zona %u: riego %lu s (%s)\n", n, (unsigned long)segundos, origenTexto(origen));
+  registro.printf("Zona %u: riego %lu s (%s)\n", n, (unsigned long)segundos, origenTexto(origen));
   return true;
 }
 
 void riegoDetenerZona(uint8_t n) {
   if (n < 1 || n > NUM_ZONAS) return;
-  if (zonas[n - 1].pedida) Serial.printf("Zona %u: detenida\n", n);
+  if (zonas[n - 1].pedida) registro.printf("Zona %u: detenida\n", n);
   zonas[n - 1].pedida = false;
 }
 
@@ -111,7 +112,7 @@ static void leerOptos() {
 
   bool responde = Wire.requestFrom((uint8_t)ADDR_ZONAS, (uint8_t)1) == 1;
   if (responde != optosOk || !optosLeidos)
-    Serial.println(responde ? "Placa de zonas (0x26) OK" : "La placa de zonas (0x26) no responde");
+    registro.println(responde ? "Placa de zonas (0x26) OK" : "La placa de zonas (0x26) no responde");
   optosOk = responde;
   optosLeidos = true;
   if (!responde) return;
@@ -137,7 +138,6 @@ static void leerOptos() {
     bool tension = conTension & (1 << BIT_ZONA[i]);
     if (tension != zonas[i].tension) {
       zonas[i].tension = tension;
-      Serial.printf("Zona %u: %s tension\n", i + 1, tension ? "con" : "sin");
       // Un cierre cuenta como maniobra: si alguien cierra el jardín con su
       // interruptor, su compañera espera PASO_VALVULAS_MS para cerrarse. Una
       // apertura no, para acompañar cuanto antes a un jardín abierto a mano.
@@ -150,10 +150,14 @@ static void leerOptos() {
 }
 
 static void comprobarValvulas() {
+  static bool manualAnterior[NUM_ZONAS] = {};
   for (uint8_t i = 0; i < NUM_ZONAS; i++) {
     EstadoZona &z = zonas[i];
+    bool manual = interruptorManual(i);
+    if (manual && !manualAnterior[i]) registro.printf("Zona %u: abierta con el interruptor\n", i + 1);
+    manualAnterior[i] = manual;
     bool fallo = optosOk && z.rele && !z.tension && millis() - releCambioMs[i] > FALLO_VALVULA_MS;
-    if (fallo && !z.falloValvula) Serial.printf("Zona %u: rele activado y sin tension en la valvula\n", i + 1);
+    if (fallo && !z.falloValvula) registro.printf("Zona %u: rele activado y sin tension en la valvula\n", i + 1);
     z.falloValvula = fallo;
   }
 }
@@ -166,7 +170,7 @@ static void normalizar() {
     EstadoZona &z = zonas[i];
     if (z.pedida && millis() - z.inicioMs >= z.duracionMs) {
       z.pedida = false;
-      Serial.printf("Zona %u: fin del riego\n", i + 1);
+      registro.printf("Zona %u: fin del riego\n", i + 1);
     }
     if (z.pedida) pedidas |= 1 << i;
     if (interruptorManual(i)) manuales |= 1 << i;
@@ -188,7 +192,7 @@ static void normalizar() {
     if (!(acompanantes & elegida)) {
       uint8_t c = __builtin_ctz(elegida);
       if (!zonas[c].porCompania)
-        Serial.printf("Zona %u sin compania: abro la zona %u para acompanarla\n", i + 1, c + 1);
+        registro.printf("Zona %u sin compania: abro la zona %u para acompanarla\n", i + 1, c + 1);
       if (!zonas[c].pedida) zonas[c].activadaPor = zonas[i].activadaPor;
     }
     acompanantes |= elegida;

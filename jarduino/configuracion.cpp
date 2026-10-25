@@ -1,5 +1,6 @@
 #include <LittleFS.h>
 #include "configuracion.h"
+#include "registro.h"
 
 Configuracion config;
 
@@ -125,7 +126,7 @@ static void configuracionDesdeJson(const JsonDocument &doc, Configuracion &c) {
     int id = obj["id"] | 0;
     if (id < 1 || id > NUM_ZONAS) continue;
     if (!zonaDesdeJson(obj, c.zonas[id - 1]))
-      Serial.printf("config.json: zona %d con campos no válidos, se queda por defecto\n", id);
+      registro.printf("config.json: zona %d con campos no válidos, se queda por defecto\n", id);
   }
 
   JsonObjectConst notif = doc["sistema"]["notificaciones"];
@@ -140,16 +141,16 @@ bool cargarConfiguracion(Configuracion &c) {
   aplicarDefectos(c);
 
   if (!LittleFS.begin()) {
-    Serial.println("LittleFS: no monta, lo formateo");
+    registro.println("LittleFS: no monta, lo formateo");
     if (!LittleFS.format() || !LittleFS.begin()) {
-      Serial.println("LittleFS: fallo al formatear, sigo con los valores por defecto");
+      registro.println("LittleFS: fallo al formatear, sigo con los valores por defecto");
       return false;
     }
   }
 
   File f = LittleFS.open(CONFIG_FILE_PATH, "r");
   if (!f) {
-    Serial.println("config.json no existe, guardo los valores por defecto");
+    registro.println("config.json no existe, guardo los valores por defecto");
     guardarConfiguracion(c);
     return false;
   }
@@ -158,7 +159,7 @@ bool cargarConfiguracion(Configuracion &c) {
   DeserializationError err = deserializeJson(doc, f);
   f.close();
   if (err) {
-    Serial.printf("config.json no válido (%s), guardo los valores por defecto\n", err.c_str());
+    registro.printf("config.json no válido (%s), guardo los valores por defecto\n", err.c_str());
     guardarConfiguracion(c);
     return false;
   }
@@ -176,7 +177,7 @@ bool guardarConfiguracion(const Configuracion &c) {
   const char *tmp = CONFIG_FILE_PATH ".tmp";
   File f = LittleFS.open(tmp, "w");
   if (!f) {
-    Serial.println("No se pudo abrir config.json para escritura");
+    registro.println("No se pudo abrir config.json para escritura");
     return false;
   }
   bool ok = serializeJson(doc, f) > 0;
